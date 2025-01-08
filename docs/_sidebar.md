@@ -1,0 +1,31 @@
+- [Welcome](/0_welcome)
+- Labs
+  - Lab 0
+    - [Pulumi Setup](/labs/lab_0/0_setup)
+  - Lab 1
+    - [Intro to ECS](/labs/lab_1/0_ecs_intro)
+    - [Hands On](/labs/lab_1/1_hands_on)
+    - [Resources](/labs/lab_1/2_resources)
+  - Lab 2
+    - [Intro to ALB](/labs/lab_2/0_alb_intro)
+    - [Hands On](/labs/lab_2/1_hands_on)
+    - [Resources](/labs/lab_2/2_resources)
+  - Lab 3
+    - [Intro to ECR](/labs/lab_3/0_ecr_intro)
+    - [Hands On](/labs/lab_3/1_hands_on)
+    - [Resources](/labs/lab_3/2_resources)
+  - Lab 4
+    - [Intro to Auto Scaling](/labs/lab_4/0_autoscaling_intro)
+    - [Hands On](/labs/lab_4/1_hands_on)
+    - [Resources](/labs/lab_4/2_resources)
+  - Lab 5
+    - [Intro to CloudFront](/labs/lab_5/0_cloudfront_intro)
+    - [Hands On](/labs/lab_5/1_hands_on)
+    - [Resources](/labs/lab_5/2_resources)
+  - Lab 6
+    - [Intro to Asynchronous Messaging](/labs/lab_6/0_sqs_intro)
+    - [Hands On](/labs/lab_6/1_hands_on)
+    - [Resources](/labs/lab_6/2_resources)
+  - [Clean Up](/labs/lab_cleanup)
+- [Next Steps](/2_next)
+- [Conclusion](/3_conclusion)
