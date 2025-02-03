@@ -1,213 +1,170 @@
-# Lab 5: Setting up CloudFront
+# Hands On
 
-## Step 1: Create CloudFront Distribution
 
-Add to your existing `index.ts`:
-```typescript
-// Create CloudFront distribution
-const distribution = new aws.cloudfront.Distribution("workshop-cdn", {
-  enabled: true,
-  defaultCacheBehavior: {
-    allowedMethods: [
-      "DELETE",
-      "GET",
-      "HEAD",
-      "OPTIONS",
-      "PATCH",
-      "POST",
-      "PUT",
-    ],
-    cachedMethods: ["GET", "HEAD"],
-    targetOriginId: "ALB",
-    viewerProtocolPolicy: "redirect-to-https",
-    forwardedValues: {
-      queryString: true,
-      cookies: {
-        forward: "all",
-      },
-    },
-    minTtl: 0,
-    defaultTtl: 3600,
-    maxTtl: 86400,
-  },
-  restrictions: {
-    geoRestriction: {
-      restrictionType: "none",
-    },
-  },
-  viewerCertificate: {
-    cloudfrontDefaultCertificate: true,
-  },
-  origins: [
-    {
-      domainName: alb.dnsName,
-      originId: "ALB",
-      customOriginConfig: {
-        httpPort: 80,
-        httpsPort: 443,
-        originProtocolPolicy: "http-only",
-        originSslProtocols: ["TLSv1.2"],
-      },
-    },
-  ],
-});
-// Export CloudFront domain
-export const cloudfrontDomain = distribution.domainName;
-```
+## Automating Secret handling
 
-## Verify the Deployment
+Did you notice we have a critical security issue in our setup?
 
-1. **Deploy the Changes**:
-```bash
-pulumi up
-```
+The database credentials are still hardcoded in the code of the todo-service.
 
-2. **Verify in AWS Console**:
-   - Navigate to CloudFront
-   - Check distribution status
-   - Test the application through CloudFront URL with HTTPS
+Since it's best practice to keep application code independent from the environment it's running in, it would be great if we could move the credentials to the environment variables. And if we could automatically retrieve them by our infrastructure code, as they are stored in AWS Secrets Manager anyway. Let's see what we can do.
 
-## Step 2: Add a custom error page served from an S3 bucket
-
-Add an S3 bucket and a custom error page served from it before the CloudFront distribution:
+First up, our application needs to read the credentials from the environment variables.
+Replace the contents of the `todo-service/src/database.ts` file with the following code:
 
 ```typescript
-// Create S3 bucket for error pages
-const errorPagesBucket = new aws.s3.BucketV2("error-pages", {
-  forceDestroy: true,
-});
+import { DataSource } from "typeorm";
+import { Task } from "./entities/task";
 
-// Block all public access
-new aws.s3.BucketPublicAccessBlock("error-pages-public-access", {
-  bucket: errorPagesBucket.id,
-  blockPublicAcls: true,
-  blockPublicPolicy: true,
-  ignorePublicAcls: true,
-  restrictPublicBuckets: true,
-});
-
-// Upload error page to S3
-new aws.s3.BucketObject("404-page", {
-  bucket: errorPagesBucket.id,
-  key: "404.html",
-  content: `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Page Not Found</title>
-</head>
-<body>
-  <h1>404 - Page Not Found</h1>
-  <p>This error page is served from an S3 bucket.</p>
-</body>
-</html>
-  `,
-  contentType: "text/html",
+export const AppDataSource = new DataSource({
+  type: "postgres",
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT!),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  synchronize: true, // Auto creates tables, disable in production
+  logging: false,
+  entities: [Task],
 });
 ```
 
-Update the CloudFront distribution to use the error page by adding an Origin Access Control:
+These changes should be self-explanatory.
+Before deploying to AWS, we can verify the changes locally, by using our docker-compose setup.
+
+Add the following content to a newly created `.env` file:
+
+```sh
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_NAME=postgres
+```
+
+Ensure you have both the database and the todo-service enabled in the `docker-compose.yml` file.
+Then, configure the `todo-service` service, so it picks up the environment variables from the `.env` file:
+
+```yaml
+  todo-service:
+    build:
+      context: ./todo-service
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+```
+
+Run `docker compose up` to start the todo-service and the database.
+Verify the application is working as expected.
+
+Next, the environment variables need to be set to the correct values in the ECS stack.
+First we need a source where to read them from.
+Open the database secret in the Secrets Manager console in your browser.
+When you display the secrets contents and click on the `Plaintext` tab, you'll see that the key-value AWS showes, refers to the secret being JSON-formatted.
+You'll need that knowledge in a moment.
+
+In the `lib/ecs-stack.ts` file, at the end of the `taskImageOptions`, right after the `logDriver` of the `ApplicationLoadBalancedFargateService` properties, add the following lines:
 
 ```typescript
-// Create Origin Access Control for S3
-const oac = new aws.cloudfront.OriginAccessControl("error-pages-oac", {
-  description: "OAC for error pages",
-  originAccessControlOriginType: "s3",
-  signingBehavior: "always",
-  signingProtocol: "sigv4",
-});
+logDriver: //...
+environment: {
+  DB_HOST: "postgres",
+  DB_PORT: "5432",
+  DB_USERNAME: "postgres",
+  DB_PASSWORD: "password",
+  DB_NAME: "postgres",
+}
 ```
 
-Update the CloudFront distribution configuration:
+Well, now we still have the credentials hardcoded in the codebase, as we just moved them to the infrastructure...
+
+Wouldn't it be nice if we could just read them from the secret manager? ;P
+Yes, that's possible, it's what we'll do next.
+
+Since we already expose the `dbCredentialsSecret` from the databaseStack, we only need to pass it to the ecsStack and use the secret reference it represents.
+
+Add the secret to the `EcsStackProps` in `lib/ecs-stack.ts`:
 
 ```typescript
-// Update CloudFront distribution configuration
-const distribution = new aws.cloudfront.Distribution("workshop-cdn", {
-    // ... existing configuration ...
-  origins: [
-    {
-      domainName: alb.dnsName,
-      originId: "ALB",
-      customOriginConfig: {
-        httpPort: 80,
-        httpsPort: 443,
-        originProtocolPolicy: "http-only",
-        originSslProtocols: ["TLSv1.2"],
-      },
-    },
-    {
-      domainName: errorPagesBucket.bucketRegionalDomainName,
-      originId: "ErrorPages",
-      originAccessControlId: oac.id,
-    },
-  ],
-  orderedCacheBehaviors: [
-    {
-      pathPattern: "/404.html",
-      targetOriginId: "ErrorPages",
-      allowedMethods: ["GET", "HEAD"],
-      cachedMethods: ["GET", "HEAD"],
-      viewerProtocolPolicy: "redirect-to-https",
-      forwardedValues: {
-        queryString: false,
-        headers: [],
-        cookies: {
-          forward: "none",
-        },
-      },
-    },
-  ],
-  customErrorResponses: [
-    {
-      errorCode: 404,
-      responseCode: 404,
-      responsePagePath: "/404.html",
-      errorCachingMinTtl: 300,
-    },
-  ],
-});
+interface EcsStackProps extends cdk.StackProps {
+  vpc: Vpc;
+  databaseConnections: Connections;
+  databaseCredentialsSecret: ISecret;
+}
 ```
 
-Add a bucket policy to allow CloudFront to access the error page:
+Then, pass the secret reference from the databaseStack to the ecsStack in the `bin/cdk.ts` file:
 
 ```typescript
-// Add bucket policy for CloudFront access
-new aws.s3.BucketPolicy("error-pages-policy", {
-  bucket: errorPagesBucket.id,
-  policy: pulumi
-    .all([errorPagesBucket.arn, distribution.arn])
-    .apply(([bucketArn, distributionArn]) =>
-      JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Effect: "Allow",
-            Principal: {
-              Service: "cloudfront.amazonaws.com",
-            },
-            Action: "s3:GetObject",
-            Resource: `${bucketArn}/*`,
-            Condition: {
-              StringEquals: {
-                "AWS:SourceArn": distributionArn,
-              },
-            },
-          },
-        ],
-      })
-    ),
+const ecsStack = new EcsStack(app, 'EcsStack', {
+  vpc: vpc,
+  databaseConnections: databaseConnections,
+  databaseCredentialsSecret: databaseStack.dbCredentialsSecret,
 });
 ```
 
-According to the best practices, the error page should be served via cloudfront and not directly from the S3 bucket. The bucket itself is private and only accessible via the CloudFront distribution.
+That resolves the necessary references.
 
-
-## Verify the Deployment
-
-1. **Deploy the Changes**:
-```bash
-pulumi up
+In the `lib/ecs-stack.ts` file, the `environment` property is now replaced by the `secrets` property.
+Rename the `environment` property to `secrets` and adjust the variables like in the following lines:
+```typescript
+// ...
+import { AwsLogDriver, Cluster, ContainerImage, PropagatedTagSource, Secret } from "aws-cdk-lib/aws-ecs";
+// ...
+secrets: {
+  DB_HOST: Secret.fromSecretsManager(
+      props!.databaseCredentialsSecret,
+      'host'
+  ),
+  DB_PORT: Secret.fromSecretsManager(
+      props!.databaseCredentialsSecret,
+      'port'
+  ),
+  DB_USERNAME: Secret.fromSecretsManager(
+      props!.databaseCredentialsSecret,
+      'username'
+  ),
+  DB_PASSWORD: Secret.fromSecretsManager(
+      props!.databaseCredentialsSecret,
+      'password'
+  ),
+  DB_NAME: Secret.fromSecretsManager(
+      props!.databaseCredentialsSecret,
+      'dbname'
+  ),
+};
 ```
 
-2. **Verify Error Pages**:
-   - Test the error pages by adding a random path to the CloudFront URL
+You can see, that in this case the `host` key is referenced. That's because the secret is stored in JSON format and the kind `fromSecretsManager` function supports to extract a specific value from the JSON.
+
+Now, no environment-specific credentials are now hardcoded in the codebase.
+
+Deploy the changes now and verify the todo-service is working as expected.
+
+Did you notice how cdk automatically managed the permissions, so ECS can access the secret as necessary?
+
+When the deployment is complete, check out the new ECS-task in the ECS console.
+There's additional information towards the bottom of its details page.
+Go to the `Environment variables and files` tab and check out how a secret references look like.
+
+
+## Security Hub
+
+Next, go to the Security Hub page in the AWS console.
+
+Explore the different sub pages on your own, while thinking of the following questions:
+- How to ensure your AWS organisation / account complies with a security standard like NIST?
+- Where would you see company-specific security issues specified via organisation wide AWS Config rules?
+- Where can you see security issues in your account, based on severity?
+- Are the findings meant for your account only, or are they meant for the whole organisation?
+- When looking at a specific finding, which resource is affected and how can you find out how to fix it?
+
+Security Hub sadly is a rather "slow" tool. Most rules it applies to AWS resources are only checked once every 24 hours.
+Can you identify a finding that you relates to this workshop?
+
+Keep in mind, not all findings - even if labeled as `HIGH` - are critical. The rules AWS applies are sometimes a bit too generic, and your environment might be fine even if Security Hub lists a finding.
+But it's still a good practice to regularly check the findings and fix them.
+For some findings, "fixing" might be as simple as setting its so-called Workflow status to `SUPPRESSED` if you are sure it's not a security issue in your case.

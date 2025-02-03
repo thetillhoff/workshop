@@ -1,13 +1,9 @@
 {
-  "name": "statista-aws-workshop-2024-02",
+  "name": "aws-workshop",
   "version": "0.0.1",
   "description": "",
   "scripts": {
     "start": "docsify serve ."
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/superluminar-io/statista-aws-workshop-2024-02.git"
   },
   "author": "",
   "license": "MIT",
