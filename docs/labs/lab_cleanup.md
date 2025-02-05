@@ -8,23 +8,29 @@ After completing the labs, it's important to clean up the resources you have cre
 
 ## Steps to Clean Up
 
-### 1. Delete the Resources Using Pulumi
+### 1. Delete the Resources Using CDK
 
-The simplest way to delete all resources created by your Pulumi stack is to destroy the stack itself. This will automatically clean up all resources managed by Pulumi.
+The simplest way to delete all resources created by your CDK code is to destroy the stacks. This will automatically clean up all resources managed by CDK / CloudFormation.
 
 1. **Open Your Terminal**
 
-   Navigate to the root directory of your Pulumi project.
+   Navigate to your latest `cdk` folder.
 
-2. **Run the Pulumi Destroy Command**
+2. **Run the CDK Destroy Command**
 
    Run the following command to destroy the stack:
 
-   ```bash
-   pulumi destroy
+   ```sh
+   cdk destroy --all
    ```
 
-   Confirm the deletion when prompted. This will delete all resources created by Pulumi.
+   Confirm the deletions when prompted. This will delete all resources created by CDK / CloudFormation.
+
+   Alternatively, after triple checking you're using the right folder and accounts, you can skip the prompts:
+   
+   ```sh
+   cdk destroy --all --require-approval never # This is a dangerous command. Don't use this in production.
+   ```
 
 ### 2. Manual Verification (Optional)
 
@@ -32,15 +38,13 @@ To ensure all resources are properly deleted, you can manually verify the deleti
 
 **AWS Management Console**:
 
-- **VPC**: Navigate to the VPC dashboard and verify that the VPC and associated resources (subnets, route tables, security groups) are deleted.
-- **ALB**: Navigate to the EC2 Load Balancerdashboard and verify that the Load Balancer is no longer listed.
-- **Cloudfront**: Navigate to the Cloudfront dashboard and verify that the distribution is deleted.
-- **S3**: Navigate to the S3 dashboard and verify that the bucket is deleted.
-- **ECS**: Navigate to the ECS dashboard and verify that the cluster is deleted.
-- **SQS**: Navigate to the SQS dashboard and verify that the queue and the dead letter queue are deleted.
-- **Lambda**: Navigate to the Lambda dashboard and verify that the function is deleted.
+- **VPC**: Navigate to the VPC Console and verify that the VPC and associated resources (subnets, route tables, security groups) are deleted.
+- **ALB**: Navigate to the EC2 Console and verify that the Load Balancer is no longer listed.
+- **ECS**: Navigate to the ECS Console and verify that the cluster is deleted.
+- **RDS**: Navigate to the RDS Console and verify that the database is deleted.
+- **Elasticache**: Navigate to the Elasticache Console and verify that the cluster is deleted.
 
-### 3. Check for Remaining Resources (Recommended)
+### 3. Check For Remaining Resources (Recommended)
 
 After completing the above steps, it's a good practice to double-check for any remaining resources:
 
@@ -49,4 +53,4 @@ After completing the above steps, it's a good practice to double-check for any r
 
 ## Summary
 
-By following these steps, you will ensure that all resources created during the labs are properly cleaned up, avoiding unnecessary costs. The `pulumi destroy` command is the primary method for clean-up, but manual verification steps are provided for completeness. Always double-check your AWS account to confirm all resources have been removed.
+By following these steps, you will ensure that all resources created during the labs are properly cleaned up, avoiding unnecessary costs. The `cdk destroy --all` command is the primary method for clean-up, but manual verification steps are provided for completeness. Always double-check your AWS account to confirm all resources have been removed.

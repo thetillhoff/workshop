@@ -1,6 +1,5 @@
 # Hands On
 
-
 ## Automating Secret handling
 
 Did you notice we have a critical security issue in our setup?
@@ -14,7 +13,7 @@ Replace the contents of the `todo-service/src/database.ts` file with the followi
 
 ```typescript
 import { DataSource } from "typeorm";
-import { Task } from "./entities/task";
+import { Todo } from "./entities/todo";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -25,7 +24,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   synchronize: true, // Auto creates tables, disable in production
   logging: false,
-  entities: [Task],
+  entities: [Todo],
 });
 ```
 
@@ -46,15 +45,15 @@ Ensure you have both the database and the todo-service enabled in the `docker-co
 Then, configure the `todo-service` service, so it picks up the environment variables from the `.env` file:
 
 ```yaml
-  todo-service:
-    build:
-      context: ./todo-service
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    depends_on:
-      - postgres
+todo-service:
+  build:
+    context: ./todo-service
+  ports:
+    - "3000:3000"
+  env_file:
+    - .env
+  depends_on:
+    - postgres
 ```
 
 Run `docker compose up` to start the todo-service and the database.
@@ -99,7 +98,7 @@ interface EcsStackProps extends cdk.StackProps {
 Then, pass the secret reference from the databaseStack to the ecsStack in the `bin/cdk.ts` file:
 
 ```typescript
-const ecsStack = new EcsStack(app, 'EcsStack', {
+const ecsStack = new EcsStack(app, "EcsStack", {
   vpc: vpc,
   databaseConnections: databaseConnections,
   databaseCredentialsSecret: databaseStack.dbCredentialsSecret,
@@ -110,6 +109,7 @@ That resolves the necessary references.
 
 In the `lib/ecs-stack.ts` file, the `environment` property is now replaced by the `secrets` property.
 Rename the `environment` property to `secrets` and adjust the variables like in the following lines:
+
 ```typescript
 // ...
 import { AwsLogDriver, Cluster, ContainerImage, PropagatedTagSource, Secret } from "aws-cdk-lib/aws-ecs";
@@ -150,12 +150,12 @@ When the deployment is complete, check out the new ECS-task in the ECS console.
 There's additional information towards the bottom of its details page.
 Go to the `Environment variables and files` tab and check out how a secret references look like.
 
-
 ## Security Hub
 
 Next, go to the Security Hub page in the AWS console.
 
 Explore the different sub pages on your own, while thinking of the following questions:
+
 - How to ensure your AWS organisation / account complies with a security standard like NIST?
 - Where would you see company-specific security issues specified via organisation wide AWS Config rules?
 - Where can you see security issues in your account, based on severity?

@@ -6,6 +6,7 @@ There are different areas where we can apply caching in our lab setup.
 
 What you might have noticed during your previous deployments, is that the docker image is always rebuilt and redeployed, even if there was no change in the code for it.
 You can fix that by caching the docker image locally by adding a single line to the `lib/ecs-stack.ts` file:
+
 ```typescript
 image: ContainerImage.fromAsset(
   "../todo-service",
@@ -16,6 +17,7 @@ image: ContainerImage.fromAsset(
   }
 ),
 ```
+
 It tells cdk to not just build and push to AWS, but also to output the docker image to the local docker daemon.
 
 Note that this doesn't work for pipelines like Github Actions. But there are other ways to cache the docker image there as well which are not covered in this workshop.
@@ -28,7 +30,6 @@ Finally, change the `FROM` line in the `Dockerfile` to `FROM public.ecr.aws/dock
 If you are curious why we choose `-alpine` instead of any other variant, you can read a good comparison about the differences here: https://labs.iximiuz.com/tutorials/how-to-choose-nodejs-container-image.
 TL;DR: The alpine image is way smaller and therefore faster to download and start.
 
-
 ## Caching with Redis
 
 While that was somewhat related to caching, this wasn't our primary goal in this caching section.
@@ -39,6 +40,7 @@ That's where a managed cache like Redis comes in.
 
 In AWS, there's a managed service for Redis called "ElastiCache" that supports running a managed Redis instance or cluster.
 There are two modes supported, which have [very different pricing](https://aws.amazon.com/elasticache/pricing/):
+
 - serverless, where you pay per GB-hour and data transfer.
 - instance-based, where you pay per instance and are only limited memory.
 
@@ -47,6 +49,9 @@ Do you have constant traffic and know how much memory you need? You'll probably 
 Do you have highly dynamic traffic, and don't know how much memory you need? You'll probably save money by using the serverless mode.
 
 The serverless one is a bit easier to set up, so we'll use that in this workshop.
+
+So far, we've only used L2 constructs in our CDK code.
+For ElastiCache, there are only L1 constructs, which means a bit more code is required to set it up.
 
 Since it's a new dependency of our todo-service, we'll add the ElastiCache in a separate stack.
 Create a new file `lib/elasticache-stack.ts` and add the following code:
@@ -78,12 +83,16 @@ export class ElasticacheStack extends cdk.Stack {
       securityGroups: [securityGroup],
     });
 
-    const elasticache = new ElastiCache.CfnServerlessCache(this, "ServerlessCache", {
-      engine: 'redis',
-      serverlessCacheName: 'todo-service-cache',
-      securityGroupIds:[securityGroup.securityGroupId],
-      subnetIds: props!.vpc.privateSubnets.map((s) => s.subnetId),
-    });
+    const elasticache = new ElastiCache.CfnServerlessCache(
+      this,
+      "ServerlessCache",
+      {
+        engine: "redis",
+        serverlessCacheName: "todo-service-cache",
+        securityGroupIds: [securityGroup.securityGroupId],
+        subnetIds: props!.vpc.privateSubnets.map((s) => s.subnetId),
+      }
+    );
 
     this.endpointAddress = elasticache.attrEndpointAddress;
   }
@@ -99,6 +108,7 @@ This code creates an ElastiCache stack that sets up a serverless Redis instance.
 3. A `Connections` object is created and exposed by this stack. This object bundles the security group with the default Redis port (6379) to make it easier to grant access to other AWS resources.
 
 4. The main ElastiCache instance is created using `CfnServerlessCache`:
+
    - Uses Redis as the engine
    - Named 'todo-service-cache'
    - Placed in the private subnets of the provided VPC
@@ -108,7 +118,7 @@ This code creates an ElastiCache stack that sets up a serverless Redis instance.
 
 The stack exposes both the endpoint address and connections object so that other stacks (like our ECS service) can connect to and use the Redis cache.
 
-Make sure to add the new stack to the `bin/cdk.ts` file - before the `ecsStack` declaration -  exactly like we did for the database stack.
+Make sure to add the new stack to the `bin/cdk.ts` file - before the `ecsStack` declaration - exactly like we did for the database stack.
 
 Deploy the changes now.
 
@@ -131,30 +141,36 @@ interface EcsStackProps extends cdk.StackProps {
 Next, add an `environment` section to the `ApplicationLoadBalancedFargateService` in the `lib/ecs-stack.ts` file:
 
 ```typescript
-const albFargateService = new ApplicationLoadBalancedFargateService(this, "TodoService", {
-  // ...
-  taskImageOptions: {
+const albFargateService = new ApplicationLoadBalancedFargateService(
+  this,
+  "TodoService",
+  {
     // ...
-    environment: {
-      REDIS_ENDPOINT: props!.elasticacheEndpoint,
-    },
-    secrets: {
+    taskImageOptions: {
       // ...
+      environment: {
+        REDIS_ENDPOINT: props!.elasticacheEndpoint,
+      },
+      secrets: {
+        // ...
+      },
     },
-  },
-  // ...
-});
+    // ...
+  }
+);
 ```
 
-Lastly, add another line next to the `allowToDefaultPort` line to allow the ecs-tasks to connect to the elasticache instance:
+Lastly, add another line next to the `allowToDefaultPort` line to allow the ECS-tasks to connect to the elasticache instance:
 
 ```typescript
-albFargateService.service.connections.allowToDefaultPort(props!.elasticacheConnections)
+albFargateService.service.connections.allowToDefaultPort(
+  props!.elasticacheConnections
+);
 ```
 
-That's it for the infrastructure part. Next, we need to add a feature to our task-service so it starts using the new shiny cache.
+That's it for the infrastructure part. Next, we need to add a feature to our todo-service so it starts using the new shiny cache.
 
-Add the following configuration to the `src/database.ts` file:
+Add the following configuration to the `todo-service/src/database.ts` file:
 
 ```typescript
 export const AppDataSource = new DataSource({
@@ -163,10 +179,9 @@ export const AppDataSource = new DataSource({
     type: "redis",
     options: {
       socket: {
-          host: process.env.REDIS_ENDPOINT,
-          tls: process.env.REDIS_ENDPOINT !== 'redis', // true on AWS, false in docker env.
-          connectTimeout: 100, // 100ms
-          rejectUnauthorized: process.env.REDIS_ENDPOINT !== 'redis', // true on AWS, false in docker env.
+        host: process.env.REDIS_ENDPOINT,
+        tls: process.env.REDIS_ENDPOINT !== "redis", // Disable TLS for local development
+        connectTimeout: 100, // 100ms
       },
     },
   },

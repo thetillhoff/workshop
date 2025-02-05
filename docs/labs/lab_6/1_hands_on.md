@@ -1,6 +1,5 @@
 # Hands On
 
-
 ## Local Load Testing
 
 The application is now running properly and securely, so it's time to make it receive traffic.
@@ -16,16 +15,17 @@ As you can see there, we first need to prepare a script of what we want to test.
 [There's experimental support for typescript, but we'll stick to javascript for now.](https://grafana.com/docs/k6/latest/using-k6/javascript-typescript-compatibility-mode/#javascript-and-typescript-compatibility-mode)
 
 Create a new file called `k6-script.js` in the `todo-service` directory and add the following code to it:
+
 ```javascript
-import http from 'k6/http';
-import { sleep } from 'k6';
+import http from "k6/http";
+import { sleep } from "k6";
 
 export const options = {
   iterations: 10,
 };
 
 export default function () {
-  http.get('http://localhost:3000/');
+  http.get("http://localhost:3000/");
   sleep(1);
 }
 ```
@@ -34,15 +34,17 @@ The script describes a single user making a request every second for 10 times.
 
 Let's verify the load test locally first. Run the `docker compose up` command (if you want with `-d` to run in detached mode) to make the service and the database available locally.
 Then, as per instructions for docker on https://grafana.com/docs/k6/latest/get-started/running-k6/#run-local-tests, the next step is to run the script with:
+
 ```sh
 docker run --rm -i grafana/k6 run - < k6-script.js
 # This will fail, please continue reading.
 ```
 
-Whoops, we got some connection refused errors. That's because docker-compose creates a separate network for the containers, so the task-service is not reachable from the outside - even other containers not mentioned in the `docker-compose.yml` file.
+Whoops, we got some connection refused errors. That's because docker-compose creates a separate network for the containers, so the todo-service is not reachable from the outside - even other containers not mentioned in the `docker-compose.yml` file.
 We can manually specify a network name when running `docker run`, but for that, we need to know the name of the network.
 You can either scroll up in your terminal, as the name was printed out when you ran `docker compose up`, or you can find it in the `docker network ls` command.
 Then we can manually specify a network for the k6 container:
+
 ```sh
 docker run --rm -i --network=todo-service_default grafana/k6 run - < k6-script.js
 # This will fail again, please continue reading.
@@ -56,6 +58,7 @@ Yay! Our first load test!
 
 But as it stands, we are only testing the performance of each of our machines as we didn't limit the resources the application has available yet.
 Let's do that now, by adding a cpu and memory limit to the todo-service container in the `docker-compose.yml` file:
+
 ```yaml
   todo-service:
     // ...
@@ -66,26 +69,26 @@ Let's do that now, by adding a cpu and memory limit to the todo-service containe
           memory: 1024M
 ```
 
-This limits the resources of the task-service container to 0.5 cpu cores and 1024M memory.
+This limits the resources of the todo-service container to 0.5 cpu cores and 1024M memory.
 The numbers are choosen more or less randomly (Although a 1:2 "ratio" of cpu cores and gigabytes memory is a good starting point in most cases). Depending on your application you might need more memory to even be able to start it.
 You can also start your app without limits first, then check how much it uses when idle and go from there by doubling it or similar.
 Restart the docker-composition with and wait for the service to start ("Database connected!" message in the logs).
 
-
 Now, to increase the load - as 10 consecutive requests is just a small-scale smoke test to verify our app and load test is working in general - we move from `iterations` to a more sophisticated approach.
 Overwrite the previous options in the `k6-script.js` file with the following:
+
 ```javascript
 export const options = {
   // From https://grafana.com/docs/k6/latest/testing-guides/test-types/breakpoint-testing/#breakpoint-testing-in-k6
-  executor: 'ramping-arrival-rate', //Assure load increase if the system slows
+  executor: "ramping-arrival-rate", //Assure load increase if the system slows
   stages: [
-    { duration: '1m', target: 10000 }, // just slowly ramp-up to a HUGE load
+    { duration: "1m", target: 10000 }, // just slowly ramp-up to a HUGE load
   ],
 
   // From https://grafana.com/docs/k6/latest/examples/get-started-with-k6/test-for-performance/#ramp-up-until-threshold-fails
   thresholds: {
-    http_req_failed: [{ threshold: 'rate<0.01', abortOnFail: true }], // http errors should be less than 1%, otherwise abort the test
-    http_req_duration: ['p(99)<1000'], // 99% of requests should be below 1s
+    http_req_failed: [{ threshold: "rate<0.01", abortOnFail: true }], // http errors should be less than 1%, otherwise abort the test
+    http_req_duration: ["p(99)<1000"], // 99% of requests should be below 1s
   },
 };
 ```
@@ -112,15 +115,16 @@ For me it was roughly these numbers:
 ~3000/s for 0.5cores with used memory of ~320MB
 ~1000/s for 0.25cores with used memory of ~250MB
 
-
 ## Right Sizing of Resources
 
 Alright, let's recap what we can learn from this:
+
 - The service has a breaking point, and it's cpu related.
 - The service can handle ~3000 requests per second with 0.5 cores and ~1000 requests per second with 0.25 cores.
 - The service uses ~320MB of memory with 0.5 cores and ~250MB with 0.25 cores.
 
 A conclusion for resource right sizing might be the following:
+
 - A 1:1 ratio of cpu cores and gigabytes of memory (like 1024MB memory per 1 cpu core) seems like a good fit, although it's not exactly linear.
   You can experiment with more resources too and see what happens to the memory usage for a whole cpu core. You then might conclude that less memory works, too.
   But keep in mind, that hitting the cpu limit only means the application becomes slower, but when it hits the memory limit, it will crash with an out-of-memory error.
@@ -140,14 +144,16 @@ For this workshop, we'll skip setting resource limits for the database.
 Enough optimizing our local playground. Stop the local setup and mentally move to our AWS setup.
 
 Before we apply resource changes to our AWS setup, let's see if we can run the load test against our AWS setup, too.
-Change your `k6-script.js` to point to the task-service's loadbalancer url instead of `localhost`.
+Change your `k6-script.js` to point to the todo-service's loadbalancer url instead of `localhost`.
 You can retrieve the value from the EC2 console in AWS:
+
 ```javascript
-http.get('http://<replace-me>/');
+http.get("http://<replace-me>/");
 // for example: http.get('http://EcsSta-TaskS-NtDNgVPAzFSH-2136246117.eu-central-1.elb.amazonaws.com/');
 ```
 
 Start the load test, but remove the `--network` part. Check if you can find all of the following metrics in AWS:
+
 - ECS-service metrics
 - Loadbalancer metrics
 - Database metrics

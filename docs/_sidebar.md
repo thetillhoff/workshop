@@ -26,12 +26,14 @@
   - Lab 8 - Database Failover
     - [Theory](/labs/lab_8/0_theory)
     - [Hands On](/labs/lab_8/1_hands_on)
-  - Lab 9 - Caching
+  - Lab 9 - Caching - WIP
     - [Theory](/labs/lab_9/0_theory)
     - [Hands On](/labs/lab_9/1_hands_on)
   - Lab 10 - Lambda and SQS
     - [Theory](/labs/lab_10/0_theory)
     - [Hands On](/labs/lab_10/1_hands_on)
+  <!-- - Lab 11 - S3 - WIP
+    - [Theory](/labs/lab_11/0_theory)
+    - [Hands On](/labs/lab_11/1_hands_on) -->
   - [Clean Up](/labs/lab_cleanup)
-- [Next Steps](/2_next)
-- [Conclusion](/3_conclusion)
+- [Conclusion](/2_conclusion)
