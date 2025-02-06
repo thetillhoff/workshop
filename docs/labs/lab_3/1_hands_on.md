@@ -20,13 +20,14 @@ Open the RDS console in AWS and create a new database manually.
 
 The creation of a RDS database takes roughly 10 minutes, so feel free to grab a coffee in the meantime.
 
+
 ## Todo Service on localhost and Todo Database on AWS
 
-When the database cluster is ready, retrieve it's Writer endpoint and update the connection string in the `todo-service/.env` file accordingly.
+When the database cluster is ready, retrieve it's Writer endpoint and update the connection string in the `todo-service/database.ts` file accordingly.
 The credentials can be found in the Secret Manager of the AWS account.
 
 Comment out the `postgres` service section in the `todo-service/docker-compose.yaml` file, including the `depends_on` part of the `todo-service`.
-Run `docker compose up` in the `todo-service` folder to start the database container on your local machine.
+Run `docker compose up --build` in the `todo-service` folder to start the database container on your local machine.
 Verify that the application can connect to the database and works as intended.
 
 Okay, the database on AWS is working and it's relatively easy to work with. But as with the network, we want to manage it with code, so we can replicate it in multiple accounts.
@@ -110,6 +111,7 @@ Deploy the changes with the following command:
 
 ```sh
 cdk deploy
+# This command fails, please read on.
 ```
 
 Oh no, we got an error!
@@ -117,6 +119,7 @@ Since we have two stacks now, we need to tell cdk which one to deploy. Or, since
 
 ```sh
 cdk deploy --all
+# This command fails, please read on.
 ```
 
 Again, the creation of a RDS database takes roughly 10 minutes, so feel free to grab a coffee in the meantime.
@@ -124,11 +127,62 @@ Again, the creation of a RDS database takes roughly 10 minutes, so feel free to 
 After the deployment of this new stack is complete, check if you can find the database in the AWS console.
 How is it configured? In which subnets is it running in? Does it have a security group?
 
+
 ## Todo Service on localhost and Todo Database on AWS - IaC edition
 
-As in the earlier step, connect your local todo-service to the database in AWS by adjusting the `todo-service/.env` file and updating it with the new host and credentials from the Secret Manager.
+Now, with the new database, we need to update the database configuration in the `todo-service/database.ts` file.
+Instead of having the values hardcoded in the application, create a `todo-service/.env` file and add the following variables:
 
-Don't forget the security group rule for your IP :P
+```sh
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_NAME=postgres
+```
+
+Then, replace the hardcoded values in the `todo-service/database.ts` file with the environment variables.
+
+```typescript
+export const AppDataSource = new DataSource({
+  type: "postgres",
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT!),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  synchronize: true, // Auto creates tables, disable in production
+  logging: false,
+  entities: [Todo],
+});
+```
+
+The `process.env.*` statements mean that the application will pick up the values from environment variables.
+Docker Containers have their own set of environment variables, so we need to make sure to pass the environment variables specified in the `.env` file to the container.
+
+Adjust the `docker-compose.yml` file to pass the `.env` file to the container:
+
+```yaml
+# ...
+  todo-service:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+```
+
+The two new lines will tell docker to parse the `todo-service/.env` file and pass the each of the variables declared in it to the container as environment variables.
+
+Verify that the application still works as intended with `docker compose up --build`.
+
+Then, update the credentials in the `todo-service/.env` file with credentials for your database in AWS.
+You can find them in the Secret Manager of the AWS account.
+
+Don't forget to add the security group rule for your IP once again: new database -> new security group :P
 Since it's an intermediate step, you can create it manually.
 
 Verify that the application can connect to the database and works as intended.
