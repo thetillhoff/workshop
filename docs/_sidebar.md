@@ -2,6 +2,8 @@
 - Labs
   - Lab 0 - Introduction
     - [Introduction](/labs/introduction)
+    - [Theory](/labs/lab_0/0_theory)
+    - [Hands On](/labs/lab_0/1_hands_on)
   - Lab 1 - Networking
     - [Theory](/labs/lab_1/0_theory)
     - [Hands On](/labs/lab_1/1_hands_on)
