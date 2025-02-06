@@ -130,8 +130,10 @@ How is it configured? In which subnets is it running in? Does it have a security
 
 ## Todo Service on localhost and Todo Database on AWS - IaC edition
 
-Now, with the new database, we need to update the database configuration in the `todo-service/database.ts` file.
-Instead of having the values hardcoded in the application, create a `todo-service/.env` file and add the following variables:
+Now, with the new database, we should update the database configuration in the `todo-service/database.ts` file.
+But instead of having the values hardcoded in the application, we'll use a more flexible approach with environment variables this time.
+
+Create a `todo-service/.env` file and add the following variables:
 
 ```sh
 DB_HOST=postgres
