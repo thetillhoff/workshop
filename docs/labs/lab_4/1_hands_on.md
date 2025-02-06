@@ -91,7 +91,7 @@ export class DatabaseStack extends cdk.Stack {
     // ...
 
     this.dbCredentialsSecret = dbCluster.secret!;
-    this.databaseConnections = databaseCluster.connections;
+    this.databaseConnections = dbCluster.connections;
   }
 }
 ```
