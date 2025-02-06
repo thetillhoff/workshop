@@ -6,7 +6,7 @@ This workshop comes with an example application, so you can focus on the infrast
 Instead of downloading it file by file, we'll clone the repository into your local machine.
 
 ```sh
-git clone https://github.com/superluminar-io/aws-common-services-best-practices-workshop.git
+git clone https://github.com/thetillhoff/statista-aws-advanced-workshop
 ```
 
 You'll later find the application in the `todo-service` folder. Feel free to make a copy, or just work from the repository root folder.
