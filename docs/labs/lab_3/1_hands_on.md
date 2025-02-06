@@ -9,7 +9,7 @@ Open the RDS console in AWS and create a new database manually.
 - Use "Standard create" and "Aurora (PostgreSQL compatible)" as database engine
 - Choose the "Dev/Test" template, so we are allowed to create a single instance database
 - Give it a name like `tododb`
-- As instance class, choose the burstable `db.t3.micro`
+- As instance class, choose the smallest burstable instance for example `db.t3.medium`
 - Set your own password, as the default one might have characters that are not allowed in the connection string
 - Since we want to access the database from our local machine and don't have a VPN to the network of the workshop account, we need to set it to allow "Public Access"
 - Make sure to create a new security group for this postgres database that allows inbound traffic on port 5432 from your IP address
