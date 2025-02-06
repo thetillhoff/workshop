@@ -37,5 +37,5 @@
   <!-- - Lab 11 - S3 - WIP
     - [Theory](/labs/lab_11/0_theory)
     - [Hands On](/labs/lab_11/1_hands_on) -->
-  - [Clean Up](/labs/lab_cleanup)
+- [Clean Up](/labs/lab_cleanup)
 - [Conclusion](/2_conclusion)
