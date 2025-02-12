@@ -184,9 +184,10 @@ The `--build` tells docker to rebuild the image, because application files chang
 By default, docker only rebuilds, when the Dockerfile changed.
 
 Then, update the credentials in the `todo-service/.env` file with credentials for your database in AWS.
-You can find them in the Secret Manager of the AWS account.
+You can find them in the Secret Manager Console in your browser.
 
-Don't forget to add the security group rule for your IP once again: new database -> new security group :P
+Don't forget to add the security group rule for your IP once again. Remember: New database -> New security group
+
 Since it's an intermediate step, you can create it manually.
 
 Verify that the application can connect to the database and works as intended.
