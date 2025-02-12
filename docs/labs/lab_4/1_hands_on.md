@@ -29,9 +29,14 @@ In the `lib/database-stack.ts` file, change the `subnetType` of the database to 
 Before we can deploy this, the stack deletion needs to complete. This will take a few minutes.
 In the meantime, we can already prepare a new stack for the todo service.
 
-Add a new stack `lib/ecs-stack.ts` and add the following code to it:
+Add a new stack in a new file `lib/ecs-stack.ts` with the following code:
 
 ```typescript
+import * as cdk from 'aws-cdk-lib';
+import { Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Cluster } from 'aws-cdk-lib/aws-ecs';
+import { Construct } from 'constructs';
+
 interface EcsStackProps extends cdk.StackProps {
   vpc: Vpc;
 }
@@ -40,22 +45,23 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: EcsStackProps) {
     super(scope, id, props);
 
-    const cluster = new Cluster(this, "EcsCluster", {
+    const cluster = new Cluster(this, 'EcsCluster', {
       vpc: props?.vpc,
       enableFargateCapacityProviders: true,
     });
   }
 }
+
 ```
 
 As with the databaseStack, make sure to import and add the new stack to the `bin/cdk.ts` file and pass the `vpc` property:
 
 ```typescript
 // ...
-import { EcsStack } from "../lib/ecs-stack";
+import { EcsStack } from '../lib/ecs-stack';
 // ...
-const ecsStack = new EcsStack(app, "EcsStack", {
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: "eu-central-1" },
+const ecsStack = new EcsStack(app, 'EcsStack', {
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'eu-central-1' },
   vpc: vpcStack.vpc,
 });
 ```
@@ -78,12 +84,12 @@ For that, we need both security groups in one Stack. It's better to set up the n
 We could pass the whole database object to the ECS stack, or just the security group. Both would work, but the former breaches the least-privilege principle.
 Even better than the security group, we can pass the `Connections` property of the database cluster, which contains the security group of the database and provides some helper functions around it.
 
-Similar to the `vpc` object from the VPC stack earlier, first expose the `Connections` object from the database stack to the ECS stack:
+Similar to the `vpc` object from the VPC stack earlier, first expose the `Connections` object from the database stack to the ECS stack by making the following changes:
 
 ```typescript
 export class DatabaseStack extends cdk.Stack {
   public dbCredentialsSecret: ISecret;
-  public databaseConnections: Connections;
+  public databaseConnections: IConnectable;
 
   constructor(scope: Construct, id: string, props?: DatabaseStackProps) {
     super(scope, id, props);
@@ -100,9 +106,12 @@ Don't forget the necessary imports.
 Then, add the `databaseConnections` to the props of the EcsStack in the `lib/ecs-stack.ts` file:
 
 ```typescript
+// ...
+import { IConnectable, Vpc } from 'aws-cdk-lib/aws-ec2';
+// ...
 interface EcsStackProps extends cdk.StackProps {
   vpc: Vpc;
-  databaseConnections: Connections;
+  databaseConnections: IConnectable;
 }
 ```
 
@@ -130,20 +139,20 @@ Add the following lines to the ECS Stack constructor in the `lib/ecs-stack.ts` f
 ```typescript
 const albFargateService = new ApplicationLoadBalancedFargateService(
   this,
-  "TodoService",
+  'TodoService',
   {
     cluster,
     cpu: 512,
     memoryLimitMiB: 1024,
     desiredCount: 1,
     taskImageOptions: {
-      image: ContainerImage.fromAsset("../todo-service", {
+      image: ContainerImage.fromAsset('../todo-service', {
         platform: Platform.LINUX_AMD64,
-        exclude: ["node_modules"],
+        exclude: ['node_modules'],
       }),
       containerPort: 3000,
       logDriver: new AwsLogDriver({
-        streamPrefix: "ecs/todo-service",
+        streamPrefix: 'ecs/todo-service',
       }),
     },
     taskSubnets: {
@@ -157,6 +166,8 @@ albFargateService.service.connections.allowToDefaultPort(
   props!.databaseConnections
 );
 ```
+
+Necessary imports can be found in `aws-cdk-lib/aws-ec2`, `aws-cdk-lib/aws-ecr-assets`, `aws-cdk-lib/aws-ecs`, and `aws-cdk-lib/aws-ecs-patterns`.
 
 It's the most complex object we've used so far. So let's break it down:
 
@@ -176,7 +187,7 @@ It's the most complex object we've used so far. So let's break it down:
 
 The `allowDefaultPortFrom` function in the last line of the codeblock refers to our security groups: We allow (the security group of) the todo-service to access the database (security group) on the database's default port (5432). Isn't that magical?! No need to care about IP ranges, security group names, ports, etc.
 
-Deploy the changes now.
+Deploy the changes now. If you run into issues, please consult the next section below.
 
 You can follow the deployment along in the CloudFormation console and the ECS console.
 During/After the deployment, also check the status and logs of the todo-service.
@@ -184,7 +195,7 @@ During/After the deployment, also check the status and logs of the todo-service.
 
 ## Troubleshooting
 
-The object is complex, and it's easy to make a mistake. Here are some common issues:
+The object is complex, and it's easy to make a mistake. Also, cross-platform compatibility issues can be additional pain. Here are some common issues:
 
 If you get an error that says something like `Cannot find image directory`, make sure you set the `image` property correctly. It needs to point to the directory containing the `Dockerfile`.
 
@@ -239,14 +250,15 @@ In the `/cdk/lib/ecs-stack.ts` file, add the following lines to the constructor 
 
 ```typescript
 albFargateService.targetGroup.configureHealthCheck({
-  path: "/health",
+  path: '/health',
 });
 ```
 
-If you want, you can configure the other parameters here, too. Like deacreasing the healthy-threshold from 5 to 3, or the timeout from 5 seconds to 1 second.
+With the parameters of this method, you can configure other parameters here, too. Like decreasing the healthy-threshold from 5 to 3, or the default timeout from 5 seconds to 1 second.
+
 Deploy the new configuration now.
 
-Verify your settings in the target group's health check section.
+Verify your settings in the target group's health check section. You can find this in the target group's description in the EC2 console.
 
 
 ## Architecture diagram

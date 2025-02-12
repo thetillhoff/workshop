@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
-import { DatabaseStack } from "../lib/database-stack";
+import { DatabaseStack } from '../lib/database-stack';
 
 const app = new cdk.App();
 const vpcStack = new VpcStack(app, 'VpcStack', {
