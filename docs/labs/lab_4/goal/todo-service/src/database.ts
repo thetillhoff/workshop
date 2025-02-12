@@ -3,11 +3,11 @@ import { Todo } from "./entities/todo";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: "databasestack-databasecluster68fc2945-xufnkmkhggpm.cluster-cvu4og6qcldr.eu-central-1.rds.amazonaws.com", // Replace me as necessary
+  port: 5432, // Replace me as necessary
+  username: "postgres", // Replace me as necessary
+  password: "wmi_BuK1=HTi2vjEWAsE0_b9-v4o6_", // Replace me as necessary
+  database: "postgres", // Replace me as necessary
   synchronize: true, // Auto creates tables, disable in production
   logging: false,
   entities: [Todo],

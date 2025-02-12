@@ -131,63 +131,30 @@ How is it configured? In which subnets is it running in? Does it have a security
 ## Todo Service on localhost and Todo Database on AWS - IaC edition
 
 Now, with the new database, we should update the database configuration in the `todo-service/database.ts` file.
-But instead of having the values hardcoded in the application, we'll use a more flexible approach with environment variables this time.
 
-Create a `todo-service/.env` file and add the following variables:
-
-```sh
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=password
-DB_NAME=postgres
-```
-
-Then, replace the hardcoded values in the `todo-service/database.ts` file with the environment variables.
+Replace the values in the `todo-service/database.ts` file with the values you can find in the Secret Manager Console in your browser.
+There's a button "Retrieve secret value" at the side when you are in the secret's detail view.
 
 ```typescript
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: "databasestack-databasecluster68fc2945-xufnkmkhggpm.cluster-cvu4og6qcldr.eu-central-1.rds.amazonaws.com", // Replace me as necessary
+  port: 5432, // Replace me as necessary
+  username: "postgres", // Replace me as necessary
+  password: "wmi_BuK1=HTi2vjEWAsE0_b9-v4o6_", // Replace me as necessary
+  database: "postgres", // Replace me as necessary
   synchronize: true, // Auto creates tables, disable in production
   logging: false,
   entities: [Todo],
 });
 ```
 
-The `process.env.*` statements mean that the application will pick up the values from environment variables.
-Docker Containers have their own set of environment variables, so we need to make sure to pass the environment variables specified in the `.env` file to the container.
+Don't forget to add the security group rule for your IP once again. Remember: New database -> New security group
 
-Adjust the `docker-compose.yml` file to pass the `.env` file to the container:
-
-```yaml
-# ...
-  todo-service:
-    build:
-      context: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    depends_on:
-      - postgres
-```
-
-The two new lines will tell docker to parse the `todo-service/.env` file and pass the each of the variables declared in it to the container as environment variables.
+Since it's an intermediate step, you can create it manually.
 
 Verify that the application still works as intended with `docker compose up --build`.
 The `--build` tells docker to rebuild the image, because application files changed.
 By default, docker only rebuilds, when the Dockerfile changed.
-
-Then, update the credentials in the `todo-service/.env` file with credentials for your database in AWS.
-You can find them in the Secret Manager Console in your browser.
-
-Don't forget to add the security group rule for your IP once again. Remember: New database -> New security group
-
-Since it's an intermediate step, you can create it manually.
 
 Verify that the application can connect to the database and works as intended.
