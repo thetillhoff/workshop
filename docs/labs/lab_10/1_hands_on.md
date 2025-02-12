@@ -300,6 +300,7 @@ Whoops, we forgot to allow the ECS-service to send messages to the queue.
 Because the default SQS endpoint is public, we - and AWS - need to make sure we are actually allowed to access our specific queue.
 
 Extend the `lib/ecs-stack.ts` file - for example right after the `allowToDefaultPort` block - to add the necessary permissions:
+
 ```typescript
 // ...
 const albFargateService = new ApplicationLoadBalancedFargateService(this, "TaskService", {
@@ -316,8 +317,8 @@ Follow along in the logs again like before.
 Alright, this time the lambda gets the right information. Although, it doesn't do anything with it, except logging it.
 
 Congratulations, you just
-- created a lambda function
 - created an SQS queue
 - created a dead letter queue for the SQS queue
 - made the ECS-service send messages to the SQS queue
-- made the SQS queue trigger the lambda function
+- made the SQS queue trigger a lambda function
+- created a lambda function that processes messages from the SQS queue
