@@ -37,22 +37,22 @@ Okay, the database on AWS is working and it's relatively easy to work with. But 
 Back in our CDK code, create a new file `lib/database-stack.ts` and add the following code to it:
 
 ```typescript
-import * as cdk from "aws-cdk-lib";
+import * as cdk from 'aws-cdk-lib';
 import {
   InstanceClass,
   InstanceSize,
   InstanceType,
   IVpc,
   SubnetType,
-} from "aws-cdk-lib/aws-ec2";
+} from 'aws-cdk-lib/aws-ec2';
 import {
   AuroraPostgresEngineVersion,
   ClusterInstance,
   DatabaseCluster,
   DatabaseClusterEngine,
-} from "aws-cdk-lib/aws-rds";
-import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
-import { Construct } from "constructs";
+} from 'aws-cdk-lib/aws-rds';
+import { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
+import { Construct } from 'constructs';
 
 interface DatabaseStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -64,12 +64,12 @@ export class DatabaseStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: DatabaseStackProps) {
     super(scope, id, props);
 
-    const dbCluster = new DatabaseCluster(this, "DatabaseCluster", {
+    const dbCluster = new DatabaseCluster(this, 'DatabaseCluster', {
       engine: DatabaseClusterEngine.auroraPostgres({
         version: AuroraPostgresEngineVersion.VER_16_4,
       }),
       storageEncrypted: true,
-      writer: ClusterInstance.provisioned("dbWriter", {
+      writer: ClusterInstance.provisioned('dbWriter', {
         instanceType: InstanceType.of(
           InstanceClass.BURSTABLE3,
           InstanceSize.MEDIUM
@@ -79,7 +79,7 @@ export class DatabaseStack extends cdk.Stack {
       vpcSubnets: {
         subnetType: SubnetType.PUBLIC, // TODO change to private
       },
-      defaultDatabaseName: "postgres",
+      defaultDatabaseName: 'postgres',
     });
 
     this.dbCredentialsSecret = dbCluster.secret!;
@@ -96,10 +96,10 @@ This stack needs to be added to the `bin/cdk.ts` file similarly to the `VpcStack
 
 ```typescript
 // ...
-import { DatabaseStack } from "../lib/database-stack";
+import { DatabaseStack } from '../lib/database-stack';
 // ...
-const databaseStack = new DatabaseStack(app, "DatabaseStack", {
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: "eu-central-1" },
+const databaseStack = new DatabaseStack(app, 'DatabaseStack', {
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'eu-central-1' },
   vpc: vpcStack.vpc,
 });
 ```
@@ -180,6 +180,8 @@ Adjust the `docker-compose.yml` file to pass the `.env` file to the container:
 The two new lines will tell docker to parse the `todo-service/.env` file and pass the each of the variables declared in it to the container as environment variables.
 
 Verify that the application still works as intended with `docker compose up --build`.
+The `--build` tells docker to rebuild the image, because application files changed.
+By default, docker only rebuilds, when the Dockerfile changed.
 
 Then, update the credentials in the `todo-service/.env` file with credentials for your database in AWS.
 You can find them in the Secret Manager of the AWS account.
