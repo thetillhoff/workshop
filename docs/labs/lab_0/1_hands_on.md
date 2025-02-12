@@ -9,7 +9,8 @@ Instead of downloading it file by file, we'll clone the repository into your loc
 git clone https://github.com/thetillhoff/statista-aws-advanced-workshop
 ```
 
-You'll later find the application in the `todo-service` folder. Feel free to make a copy, or just work from the repository root folder.
+You'll later find the application in the `todo-service` folder.
+The root of the repository will be the working directory for the rest of this workshop.
 
 
 ## Install AWS-CDK
