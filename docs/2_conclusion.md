@@ -13,6 +13,10 @@ Let's recap what you've accomplished:
    - Elastic Load Balancing (ELB)
    - Amazon ElastiCache
    - AWS Secrets Manager
+   - AWS Lambda
+   - Amazon Simple Queue Service (SQS)
+   - Amazon Simple Notification Service (SNS)
+   - Amazon Simple Storage Service (S3)
 
 2. You've mastered Infrastructure as Code (IaC) using AWS CDK:
    - Created and managed multiple stacks
@@ -25,6 +29,10 @@ Let's recap what you've accomplished:
    - Configured database connectivity and management
    - Implemented caching strategies
    - Created proper networking and security configurations
+   - Built serverless functions with Lambda
+   - Implemented asynchronous processing with SQS
+   - Added pub/sub messaging with SNS
+   - Integrated object storage with S3
 
 4. You've learned essential cloud operations skills:
    - Load testing and performance monitoring
@@ -32,12 +40,17 @@ Let's recap what you've accomplished:
    - Auto-scaling configuration
    - Security best practices
    - Database failover scenarios
+   - Event-driven architecture patterns
+   - Message queue management
+   - Object storage lifecycle management
 
 5. You've practiced DevOps principles:
    - Container orchestration
    - Infrastructure automation
    - Monitoring and observability
    - Security implementation
+   - Serverless deployment
+   - Event-driven architectures
 
 This workshop has equipped you with practical knowledge in building and managing production-ready applications on AWS. Here are some suggestions for continuing your AWS journey:
 
@@ -46,6 +59,8 @@ This workshop has equipped you with practical knowledge in building and managing
 - Explore advanced features of the services we've used
 - Consider pursuing AWS certifications to validate your skills
 - Stay updated with AWS best practices and new service features
+- Experiment with different serverless and event-driven patterns
+- Learn more about AWS messaging and storage solutions
 
 ## Join the AWS Community
 
