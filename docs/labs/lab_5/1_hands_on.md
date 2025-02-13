@@ -147,7 +147,7 @@ You can see, that in this case keys like `host` are referenced. That's because t
 
 Now, no environment-specific credentials are now hardcoded in the codebase.
 
-Deploy the changes now and verify the todo-service is working as expected.
+Deploy the changes now and verify the todo-service is working as expected by running some requests against it.
 
 Did you notice how cdk automatically managed the permissions, so ECS can access the secret as necessary?
 
