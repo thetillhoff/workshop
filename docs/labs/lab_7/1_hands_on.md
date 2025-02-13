@@ -126,10 +126,10 @@ For most cases, that should not be necessary.
 The limiting factor for the performance of our service during our load test was the cpu.
 If you are close to reaching it, but still need to serve more requests, you have two options:
 
-- Increase the resources assigned to the ECS-service. This is called horizontal scaling.
-- Increase the amount of ECS-tasks that run in parallel. This is called vertical scaling.
+- Increase the resources assigned to the ECS-service. This is called vertical scaling.
+- Increase the amount of ECS-tasks that run in parallel. This is called horizontal scaling.
 
-Since it's hard to know upfront how your application will behave with all the different possible configurations and it can be quite costly to continuously test them - imagine 32 cpu cores and 64GB memory - it's recommended to keep the resources per ECS-task stable and on the lower side and instead do vertical scaling by adding more parallel ECS-tasks.
+Since it's hard to know upfront how your application will behave with all the different possible configurations and it can be quite costly to continuously test them - imagine 32 cpu cores and 64GB memory - it's recommended to keep the resources per ECS-task stable and on the lower side and instead do horizontal scaling by adding more parallel ECS-tasks.
 
 As you already have metrics like cpu and memory usage, they can already be used as condition to scale up or down.
 That's where autoscaling comes in.
