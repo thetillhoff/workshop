@@ -1,6 +1,7 @@
 # Hands On
 
-## Right-sizing
+
+## Right-sizing in AWS
 
 After finding out the limits of our ecs-service in the previous lab, we'll start with researching the available cpu and memory limits of ECS-services.
 In the [CDK-docs](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecs_patterns.ApplicationLoadBalancedFargateService.html#cpu) and the [ECS-docs](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size) the valid values and formats for cpu and memory are described.
@@ -16,13 +17,14 @@ It's hidden beneath the `InstanceClass` and `InstanceSize` properties and doesn'
 
 Try to find the Aurora Postgres instance type pricing yourself as an exercise.
 Otherwise, here's the link: https://aws.amazon.com/rds/aurora/pricing/?pg=pr&loc=1
-Go to "Pricing by database instances", then expand the "Aurora PostgreSQL-compatible Edition" section.
-We're using an on-demand instance, so go to the "Provisioned On-Demand Instance" tab.
-Compare the `t3.medium` we're currently using against the `t4g.medium` price.
-If we change the instance type, we save `(0,096$/h - 0,085$/h) * 24h * 30d = 7,92$/month`.
-Not much, but if we have a lot of databases, it can add up quickly.
+- Go to "Pricing by database instances", then expand the "Aurora PostgreSQL-compatible Edition" section.
+- We're using an on-demand instance, so go to the "Provisioned On-Demand Instance" tab.
+- Compare the `t3.medium` we're currently using against the `t4g.medium` price.
 
-That's the manual and fail-safe approach to right-sizing.
+If we change the instance type, we save `(0,096$/h - 0,085$/h) * 24h * 30d = 7,92$/month`.
+Not much, but if we would have a lot of databases, it can add up quickly.
+
+That is the manual and fail-safe approach to right-sizing.
 
 
 ## AWS Compute Optimizer
@@ -32,18 +34,22 @@ Go to the detailed view of our database.
 At first glance, there doesn't seem to be anything useful, not even the `t4g` optimization we found.
 Now, enable the Graviton architecture in the "CPU architecture preference" section.
 
-There you go :)
+There you go!
+
 But while it displays savings of 11% and the correct price difference, the estimated monthly savings are way lower than what we calculated.
 That's because the tool takes into consideration that the database wasn't running for most of its lookback period.
 
 For the ECS recommendations, the list might be empty for you, because it doesn't show all available services like it does for the databases, but only active recommendations.
 
 But what's the difference between the `t3` and `t4g` instance types?
-Well apart, from being a generation newer, the `t4g` instances are also using the Graviton processor, which is an AWS-custom-designed ARM processor. And since it's more energy efficient, it's cheaper to run.
+
+Well apart from being a generation newer, the `t4g` instances are also using the Graviton processor, which is an AWS-custom-designed ARM processor. And since it's more energy efficient, it's cheaper to run.
+
 You might ask yourself, if it's ARM, doesn't that change the whole database engine?
+
 Well, yes and no.
 Yes, AWS has to manage that in the background somehow, but no, it doesn't affect us.
-The advantages of managed databases :)
+The advantages of managed databases!
 
 Adjust the `lib/database-stack.ts` file to use the new type.
 
@@ -56,6 +62,7 @@ instanceType: InstanceType.of(
 
 When you deploy the changes, you'll see in the RDS console that the database is not completely recreated, but modified. That's because the instance type can being modified during a database restart.
 While we didn't need to recreate the database and can keep our data, a database restart still at least takes a shutdown and a startup of a database engine, so it'll take some time - roughly 10 minutes.
+
 
 ## Log retention
 
@@ -73,27 +80,32 @@ If your result is somewhere around 3$, that's correct.
 Again, it's not much, but also 5GBs of logs aren't that much either. And that's monthly. Forever.
 
 To not be that wasteful, we can set a retention time for our logs.
-Add the `logRetention` property to the `logDriver` of the `ApplicationLoadBalancedFargateService` in the `lib/ecs-stack.ts` file:
+Configure the `logRetention` property to the `logDriver` of the `ApplicationLoadBalancedFargateService` in the `lib/ecs-stack.ts` file:
 
 ```typescript
+// ...
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+// ...
 logDriver: new AwsLogDriver({
   streamPrefix: 'ecs/todo-service',
   logRetention: RetentionDays.ONE_MONTH,
 }),
 ```
 
-Deploy this change after the database has been modified.
+Deploy this change after the database modification is completed.
 Then take all the log-groups of the ECS-Stack in CloudWatch and set their retention time to 1 month.
 While you could apply this to all log-groups you have access to, keep in mind, that sometimes there are resources where the logs really _should_ or even _must_ be retained forever.
 Those are mostly resources created during account creation.
 But it's still a good idea to check them out and see their size in the detail view. If it's more than a few MBs, I recommend to reach out to your admin team.
 
-The same goes for S3 and other storage services. If you don't recognize a bucket, check if it has some tags that tell you more, check it's size and reach out to someone who might know more.
+Checking where costs come from is tedious if checking resources one by one.
+
 
 ## Cost Explorer
 
-Instead of checking all possible services that you don't use yourself, you can also use the Cost Explorer tool. Navigate to the "Billing and Cost Management" section in the AWS console.
-Then go to "Cost Explorer" and first set the Date Range to "Past 7 Days".
+Instead of checking all possible AWS services that you might not even use yourself, you can also use the Cost Explorer tool. Navigate to the "Billing and Cost Management" section in the AWS console.
+
+Then go to "Cost Explorer" in the sidebar navigation and first set the Date Range to "Past 7 Days" on the right side.
 Set the "Granularity" to "Daily".
 Then click on "Cost by service".
 
@@ -108,16 +120,18 @@ That's what should work in all AWS accounts and give a better guess on what's th
 If you need even more insights, ask your admin team to enable resource-level data or hourly granularity in Cost Explorer.
 For most cases, that should not be necessary.
 
+
 ## Autoscaling
 
-The limiting factor for the performance of our service is the cpu.
+The limiting factor for the performance of our service during our load test was the cpu.
 If you are close to reaching it, but still need to serve more requests, you have two options:
 
-- Increase the resources assigned to an ecs-service. That's called horizontal scaling.
+- Increase the resources assigned to the ECS-service. This is called horizontal scaling.
 - Increase the amount of ECS-tasks that run in parallel. This is called vertical scaling.
 
-Since it's hard to know upfront how your application will behave with let's say 32 cpu cores and 64GB memory, it's recommended to keep the resources per ECS-task stable and instead do vertical scaling by adding more parallel ECS-tasks.
-And you already have metrics like cpu and memory usage, so they can already be used as condition to scale up or down.
+Since it's hard to know upfront how your application will behave with all the different possible configurations and it can be quite costly to continuously test them - imagine 32 cpu cores and 64GB memory - it's recommended to keep the resources per ECS-task stable and on the lower side and instead do vertical scaling by adding more parallel ECS-tasks.
+
+As you already have metrics like cpu and memory usage, they can already be used as condition to scale up or down.
 That's where autoscaling comes in.
 
 Add the following lines to the end of the constructor of the `EcsStack` in the `lib/ecs-stack.ts` file:
@@ -128,13 +142,13 @@ const scaling = albFargateService.service.autoScaleTaskCount({
   maxCapacity: 10,
 });
 
-scaling.scaleOnCpuUtilization("CpuScaling", {
+scaling.scaleOnCpuUtilization('CpuScaling', {
   targetUtilizationPercent: 60,
   scaleInCooldown: cdk.Duration.seconds(60),
   scaleOutCooldown: cdk.Duration.seconds(60),
 });
 
-scaling.scaleOnMemoryUtilization("MemoryScaling", {
+scaling.scaleOnMemoryUtilization('MemoryScaling', {
   targetUtilizationPercent: 60,
   scaleInCooldown: cdk.Duration.seconds(60),
   scaleOutCooldown: cdk.Duration.seconds(60),
@@ -156,7 +170,7 @@ Change the `desiredCount` to 2 in the constructor of the `EcsStack` in the `lib/
 ```typescript
 const albFargateService = new ApplicationLoadBalancedFargateService(
   this,
-  "TodoService",
+  'TodoService',
   {
     // ...
     desiredCount: 2,
