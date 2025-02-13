@@ -157,7 +157,7 @@ You can retrieve the value from the EC2 console in AWS:
 
 ```javascript
 http.get("http://<replace-me>/");
-// for example: http.get('http://EcsSta-TaskS-NtDNgVPAzFSH-2136246117.eu-central-1.elb.amazonaws.com/');
+// for example: http.get('http://EcsSta-TodoS-E6IPhrBGhavh-1485234785.eu-central-1.elb.amazonaws.com/');
 ```
 
 Start the load test, but remove the `--network` part. Check if you can find all of the following metrics in the AWS console in your browser:

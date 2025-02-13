@@ -16,10 +16,8 @@ export const AppDataSource = new DataSource({
     options: {
       socket: {
         host: process.env.REDIS_ENDPOINT,
-        port: 6379,
-        tls: true,
+        tls: process.env.REDIS_ENDPOINT !== "redis", // Disable TLS for local development
         connectTimeout: 100, // 100ms
-        rejectUnauthorized: process.env.REDIS_ENDPOINT !== "redis:6379", // true by default. Set this to false to disable certificate validation in local setups like docker-compose.yml
       },
     },
   },

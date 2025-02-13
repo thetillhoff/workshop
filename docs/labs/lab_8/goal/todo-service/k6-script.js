@@ -16,6 +16,6 @@ export const options = {
 };
 
 export default function () {
-  http.get('http://EcsSta-TodoS-hKPZQ8ey4tgS-530246449.eu-central-1.elb.amazonaws.com/'); // Replace me as necessary
+  http.get('http://EcsSta-TodoS-E6IPhrBGhavh-1485234785.eu-central-1.elb.amazonaws.com/'); // Replace me as necessary
   sleep(1);
 }
