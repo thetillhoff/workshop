@@ -40,5 +40,5 @@
   - Lab 12 - S3
     - [Theory](/labs/lab_12/0_theory)
     - [Hands On](/labs/lab_12/1_hands_on)
-- [Clean Up](/labs/lab_cleanup)
 - [Conclusion](/2_conclusion)
+- [Clean Up](/3_cleanup)

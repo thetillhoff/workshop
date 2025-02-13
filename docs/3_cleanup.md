@@ -1,12 +1,17 @@
-<!-- TODO -->
-
 # Clean-Up: Deleting AWS Resources
+
+Before you clean up all the resources, feel free to explore the AWS Console and recap what you did and what you've learned.
+
+You can also revisit this section later, when you're ready to delete the resources you've created.
+
 
 ## Overview
 
 After completing the labs, it's important to clean up the resources you have created to avoid incurring any unnecessary costs. This clean-up guide will help you delete all the AWS resources created during Labs.
 
+
 ## Steps to Clean Up
+
 
 ### 1. Delete the Resources Using CDK
 
@@ -32,6 +37,7 @@ The simplest way to delete all resources created by your CDK code is to destroy 
    cdk destroy --all --require-approval never # This is a dangerous command. Don't use this in production.
    ```
 
+
 ### 2. Manual Verification (Optional)
 
 To ensure all resources are properly deleted, you can manually verify the deletion using the AWS Management Console and CLI.
@@ -44,12 +50,14 @@ To ensure all resources are properly deleted, you can manually verify the deleti
 - **RDS**: Navigate to the RDS Console and verify that the database is deleted.
 - **Elasticache**: Navigate to the Elasticache Console and verify that the cluster is deleted.
 
+
 ### 3. Check For Remaining Resources (Recommended)
 
 After completing the above steps, it's a good practice to double-check for any remaining resources:
 
 - Review the AWS Cost Explorer to ensure there are no unexpected charges.
 - Check other AWS services not mentioned above (e.g., CloudWatch logs) to ensure complete cleanup.
+
 
 ## Summary
 

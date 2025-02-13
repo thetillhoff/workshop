@@ -1,6 +1,8 @@
 # Conclusion
 
-Congratulations on completing this comprehensive AWS Workshop! You've taken significant steps in understanding and implementing modern cloud architecture using AWS services.
+**Congratulations on completing this comprehensive AWS Workshop!**
+
+You've taken significant steps in understanding and implementing modern cloud architecture using AWS services.
 
 ![Congratulations!](media/congratulations.png)
 
