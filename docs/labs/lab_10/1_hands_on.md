@@ -4,11 +4,11 @@ An alternative to the compute platform ECS are Lambdas. A Lambda function is sim
 That means, for every incoming event, there's a new Lambda invocation.
 
 First, let's look at how the cdk code for a lambda function looks like.
-Create a new file `lib/lambda-stack.FilenameProcessingLambda.ts` and add the following sample lambda function code:
+Create a new file `lib/lambda-stack.FileProcessingLambda.ts` and add the following sample lambda function code:
 
 ```typescript
 export async function handler() {
-  const response = "hello-world";
+  const response = 'hello-world';
   console.log(response);
   return {
     body: response,
@@ -19,17 +19,17 @@ export async function handler() {
 
 As you can see, it's a very simple async function that returns a body and a status code.
 
-To have proper type-handling, run `npm install -D @types/aws-lambda` to add the types for the lambda function.
+To install proper type-handling, run `npm install -D @types/aws-lambda` (`-D` == `--save-dev`) in the cdk project to add the types for the lambda function.
 
 To deploy this lambda function, we need to create a new stack.
 Create a new file `lib/lambda-stack.ts` and add the following code:
 
 ```typescript
-import * as cdk from "aws-cdk-lib";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import { Construct } from "constructs";
+import * as cdk from 'aws-cdk-lib';
+import { IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Construct } from 'constructs';
 
 interface LambdaStackProps extends cdk.StackProps {
   vpc: IVpc;
@@ -39,9 +39,9 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: LambdaStackProps) {
     super(scope, id, props);
 
-    const filenameProcessingLambda = new NodejsFunction(
+    const fileProcessingLambda = new NodejsFunction(
       this,
-      "FilenameProcessingLambda",
+      'FileProcessingLambda',
       {
         runtime: Runtime.NODEJS_22_X,
         vpc: props!.vpc,
@@ -54,7 +54,7 @@ export class LambdaStack extends cdk.Stack {
 As you can see, creating a Lambda function is very easy. The only requirement is to tell AWS which runtime to use. In this case, we're also passing the VPC to the Lambda function, so it can access the resources in our VPC.
 
 The filepath where the lambda code is located is by default derived from the name of the defining file and the construct's id.
-For example, if the `NodejsFunction` is defined in a file named `lambda-stack.ts` with `FilenameProcessingLambda` as construct id (`new NodejsFunction(this, 'FilenameProcessingLambda')`), then cdk will look for `lambda-stack.FilenameProcessingLambda.ts` and `lambda-stack.FilenameProcessingLambda.js` files for the lambda function code.
+For example, if the `NodejsFunction` is defined in a file named `lambda-stack.ts` with `FileProcessingLambda` as construct id (`new NodejsFunction(this, 'FileProcessingLambda')`), then cdk will look for `lambda-stack.FileProcessingLambda.ts` and `lambda-stack.FileProcessingLambda.js` files for the lambda function code.
 
 You might've been wondering, why there weren't any cpu or memory values defined.
 Compared to ECS, the resource configuration for Lambdas is slightly different.
@@ -63,7 +63,7 @@ You can only configure memory with a value between 128 MB and 10,240 MB in 1-MB 
 As per [AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html), at 1.769 MB, a function has the equivalent of one vCPU (one vCPU-second of credits per second).
 The default `memorySize` for Lambdas is 128 MB, which is both the minimum and sufficient for our use case, so we can skip the parameter.
 
-After creating the stack definition, we need to add the new `lambdaStack` to the `bin/cdk.ts` file:
+After creating the stack definition, we need to add the new `lambdaStack` to the `bin/cdk.ts` file (for example after the `EcsStack`):
 
 ```typescript
 // ...
@@ -75,26 +75,27 @@ const lambdaStack = new LambdaStack(app, "LambdaStack", {
 });
 ```
 
-Deploy the new stack. If you want, you can choose to deploy only this stack with `cdk deploy LambdaStack`. Since all other changes have been deployed already, this can speed up things a bit.
+Deploy the new stack.
+If you want, you can choose to deploy only this stack with `cdk deploy LambdaStack`. Since all other changes have been deployed already, this can speed up things a bit.
 
-Go to the Lambda console and check out the new function. On the `Test` tab, hit the `Test` button - no need to change any parameters beforehand.
+Go to the Lambda console in your browser and explore the new function you deployed. On the `Test` tab, hit the `Test` button - no need to change any parameters beforehand.
 Expand the details in the green info box that appears, and check the response and the logs.
 
 Then, change the code of the lambda function to log the full message body like this:
 
 ```typescript
-import { SQSEvent, SQSRecord } from "aws-lambda";
+import { SQSEvent, SQSRecord } from 'aws-lambda';
 
 export const handler = async (event: SQSEvent) => {
-	const records: SQSRecord[] = event.Records;
+  const records: SQSRecord[] = event.Records;
 
-	for (let index = 0; index < records.length; index++) {
-		const body = records[index].body;
-		console.log(body);
-	}
+  for (let index = 0; index < records.length; index++) {
+    const body = records[index].body;
+    console.log(body);
+  }
 
-	return;
-}
+  return;
+};
 ```
 
 Again, deploy the changes (`cdk deploy LambdaStack` is fastest) and test the lambda function again.
@@ -104,6 +105,7 @@ This is because the lambda function expects a SQS-event instead of our manually 
 You can find an example of how such an event can look like here: https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event
 
 It might look complex at first, but for this workshop, only the following points are important to know:
+
 - An SQS-event is still JSON
 - The JSON contains a list of records
 - Each record contains a `body` element
@@ -114,12 +116,12 @@ Now compare this new knowledge against the code of the lambda function. Can you 
 
 ## SQS
 
-Instead of manually testing the lambda function with a custom event, we should trigger it via a proper event.
+Instead of manually testing the lambda function with a custom event, we should trigger it by an automated event.
 These events can generally come from a lot of different sources like S3, CloudWatch, or SQS. Especially SQS is a very common source to trigger Lambdas.
 You can find a full list of event sources for Lambda functions here: https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventsourcemapping.html
 
 SQS stands for Simple Queue Service. It's a message queue service that - together with a computing service like Lambda - allows you to decouple the processing of requests from the request itself.
-Check out the SQS console and manually create a queue with default settings.
+Check out the SQS console in your browser and manually create a queue with default settings.
 Send a message to the queue manually from the SQS console, with a random JSON body like the following:
 
 ```json
@@ -134,15 +136,15 @@ Then poll the queue to see how the message looks like.
 When a consumer processes a message from the queue, it "marks it" as being processed.
 If it doesn't acknowledge the successful processing in time, for example because it failed, the message will be put into the queue again.
 
-In case a message itself is invalid so the service won't ever be able to process it, there's a feature called "dead letter queue" (DLQ) that can be used to move the message to a different queue.
+In case a message itself is invalid so the service won't be able to process it no matter how often it tries, there's a feature called "dead letter queue" (DLQ) that can be used to move the message to a different queue.
 Instead of setting up everything manually, we want to leverage CDK again. Remove the manually created queue and move back to our CDK codebase.
 
 Create a new stack file `lib/sqs-stack.ts` and add the following code:
 
 ```typescript
-import * as cdk from "aws-cdk-lib";
-import { Queue } from "aws-cdk-lib/aws-sqs";
-import { Construct } from "constructs";
+import * as cdk from 'aws-cdk-lib';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { Construct } from 'constructs';
 
 export class SqsStack extends cdk.Stack {
   public queue: Queue;
@@ -151,13 +153,13 @@ export class SqsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const dlq = new Queue(this, "Dlq", {
-      queueName: "dlq",
+    const dlq = new Queue(this, 'Dlq', {
+      queueName: 'dlq',
     });
     this.dlq = dlq;
 
-    const queue = new Queue(this, "Queue", {
-      queueName: "queue",
+    const queue = new Queue(this, 'Queue', {
+      queueName: 'queue',
       deadLetterQueue: {
         queue: dlq,
         maxReceiveCount: 3,
@@ -173,32 +175,34 @@ Messages will be automatically put to this dlq after they were failed to be proc
 Both queues are then exposed by the stack.
 
 Add the new stack to the `bin/cdk.ts` file, before the `LambdaStack` and before the `EcsStack`.
-Since SQS is a fully managed service, it's not necessary to pass the VPC to the stack, nor is it necessary to add a dependency to the VPC stack.
-That would mean, that traffic to SQS is not routed through the VPC, but directly to the SQS service endpoint. By default, this endpoint is public, so the traffic is routed through the public internet.
+Since SQS is a fully managed service, it's not necessary to pass the VPC to the stack this time.
+That means, that traffic to SQS is not routed through the VPC, but directly to the SQS service endpoint. By default, this endpoint is public, so the traffic is routed through the public internet.
+
+Since, it's using HTTPS, that's not necessarily a problem.
 If you don't want that - as you pay for outgoing traffic for example - you can create a private endpoint for SQS in your VPC. We won't cover that in this workshop, though.
 
 Make the queue available in the LambdaStack, by passing the `queue` and `dlq` objects from the SqsStack to it.
-You've seen that a few times now already, so try to do it on your own this time.
+You've seen how to set up StackProps a few times now already, so try to do it on your own this time.
 
-Then adjust the code for the lambda function to listen to the queue, by changing the following code in the `libe/lambda-stack.ts` file:
+For types, both `Queue` and `IQueue` are possible and valid. A better practice is to use `IQueue` for parameters, since it can be mocked in tests.
+In the scope of this workshop, either is fine.
+
+Then adjust the code for the lambda function for both queues, by adjusting the code in the `lib/lambda-stack.ts` file as follows:
 
 ```typescript
 // ...
-const filenameProcessingLambda = new NodejsFunction(
-  this,
-  "FilenameProcessingLambda",
-  {
-    runtime: Runtime.NODEJS_22_X,
-    vpc: props!.vpc,
-    deadLetterQueue: props!.dlq,
-  }
-);
+const fileProcessingLambda = new NodejsFunction(this, 'FileProcessingLambda', {
+  runtime: Runtime.NODEJS_22_X,
+  vpc: props!.vpc,
+  deadLetterQueue: props!.dlq,
+});
 
-filenameProcessingLambda.addEventSource(new SqsEventSource(props!.queue));
+fileProcessingLambda.addEventSource(new SqsEventSource(props!.queue));
 // ...
 ```
 
 Deploy the changes.
+
 Did you notice how cdk automatically asked you to approve the IAM permission changes necessary for the lambda function to access the queue?
 
 Open the queue in the SQS console again. Manually send a message to the queue as you did before.
@@ -212,23 +216,24 @@ At the moment, the event messages were created manually by us.
 Next, let's extend our ECS-task to trigger the lambda function with an event message whenever a new todo entry is created.
 
 To work with AWS services from our todo-service application code, we need to install the `aws-cdk` in the `todo-service` project.
-Run `npm install @aws-sdk/client-sqs` in the project folder to add this new dependency.
+Run `npm install @aws-sdk/client-sqs` in the `todo-service` folder to add this new dependency.
 
 Then, open the `todo-service/src/controllers/todoController.ts` file and add the following code to the `createTodo` method after the first try-catch block:
 
 ```typescript
 // ...
-import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 // ...
 try {
   // ...
 } catch (error) {
-  res.status(500).json({ error: "Failed to create todo", details: error });
+  res.status(500).json({ error: 'Failed to create todo', details: error });
 }
+
 try {
   const queueUrl = process.env.QUEUE_URL;
   if (!queueUrl) {
-    throw new Error("QUEUE_URL is not set");
+    throw new Error('QUEUE_URL is not set');
   }
   const sqs = new SQSClient();
   const command = new SendMessageCommand({
@@ -243,7 +248,7 @@ try {
   });
   await sqs.send(command);
 } catch (error) {
-  console.error("Failed to send message to queue", error);
+  console.error('Failed to send message to queue', error);
 }
 // ...
 ```
@@ -256,11 +261,11 @@ Open the `lib/ecs-stack.ts` file and extend the environment variables of the `Ap
 
 ```typescript
 // ...
-import { Queue } from "aws-cdk-lib/aws-sqs";
+import { IQueue } from 'aws-cdk-lib/aws-sqs';
 // ...
 interface EcsStackProps extends cdk.StackProps {
   // ...
-  queue: Queue;
+  queue: IQueue;
 }
 // ...
 environment: {
@@ -290,35 +295,37 @@ Deploy these changes now.
 
 ## Troubleshooting
 
-Create a new todo via the application api and check whether 
-- the lambda function printed any logs
-- the sqs queue and dlq are empty
-- the ecs task printed any logs
+Create a new todo via the application api and check whether
 
+- the lambda function printed any logs
+- the SQS queue and DLQ are empty
+- the ECS-task printed any logs
 
 Whoops, we forgot to allow the ECS-service to send messages to the queue.
 Because the default SQS endpoint is public, we - and AWS - need to make sure we are actually allowed to access our specific queue.
 
-Extend the `lib/ecs-stack.ts` file - for example right after the `allowToDefaultPort` block - to add the necessary permissions:
+Extend the `lib/ecs-stack.ts` file - for example right after the blocks with `service.connections` - to add the necessary permissions:
 
 ```typescript
 // ...
-const albFargateService = new ApplicationLoadBalancedFargateService(this, "TaskService", {
+const albFargateService = new ApplicationLoadBalancedFargateService(this, 'TaskService', {
   // ...
-  props!.queue.grantSendMessages(this.api.service.taskDefinition.taskRole);
+  props!.queue.grantSendMessages(albFargateService.service.taskDefinition.taskRole);
   // ...
 });
 // ...
 ```
 
 Deploy the changes once again.
-Follow along in the logs again like before.
+
+Create a new todo via the application api and follow along in the logs like before.
 
 Alright, this time the lambda gets the right information. Although, it doesn't do anything with it, except logging it.
 
 Congratulations, you just
-- created an SQS queue
-- created a dead letter queue for the SQS queue
+
+- created an SQS queue to decouple the ECS-service from the lambda function
 - made the ECS-service send messages to the SQS queue
-- made the SQS queue trigger a lambda function
 - created a lambda function that processes messages from the SQS queue
+- made the SQS queue trigger a lambda function
+- created a dead letter queue for the SQS queue to handle invalid messages

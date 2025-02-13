@@ -246,6 +246,8 @@ Or read on about what happens if you do:
 For me, a third instance started roughly 10 minutes into the test.
 
 You can check the cpu metrics of the service, the number of parallel ECS-tasks that are running or the "Events" tab of the ECS-service to see how the scaling event looks like.
+<!-- 
+The following was related to an ongoing ECS deployment, which wanted to replace tasks - it looks like AWS ensure the healthchecks come in first.
 
 Roughly 15 minutes into the test, something weird happened;
 
@@ -262,3 +264,4 @@ Learnings from this:
 - The healthcheck should have priority over request handling.
 
 Fixing either is a lengthy process, so we'll ignore these issues for now.
+-->
