@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { IConnectable, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { IConnectable, Port, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 import { AwsLogDriver, Cluster, ContainerImage, PropagatedTagSource, Secret } from 'aws-cdk-lib/aws-ecs';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
@@ -82,6 +82,11 @@ export class EcsStack extends cdk.Stack {
 
     albFargateService.service.connections.allowToDefaultPort(
       props!.elasticacheConnections
+    );
+
+    albFargateService.service.connections.allowTo(
+      props!.elasticacheConnections,
+      Port.tcp(6380)
     );
 
     albFargateService.targetGroup.configureHealthCheck({

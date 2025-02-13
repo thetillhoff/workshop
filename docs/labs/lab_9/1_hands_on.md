@@ -167,6 +167,16 @@ albFargateService.service.connections.allowToDefaultPort(
 );
 ```
 
+According to the [docs](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/set-up.html#elasticache-install-grant-access-VPN), for serverless redis, we need to allow a second port, which is 6380:
+
+```typescript
+albFargateService.service.connections.allowTo(
+  props!.elasticacheConnections,
+  Port.tcp(6380) // imported from aws-cdk-lib/aws-ec2
+);
+```
+
+
 That's it for the infrastructure part. Next, we need to add a feature to our todo-service so it starts using the new shiny cache.
 
 First, run `npm i redis --save` to add the redis dependency to the application project.
