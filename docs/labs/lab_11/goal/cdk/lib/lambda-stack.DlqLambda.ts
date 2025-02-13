@@ -1,5 +1,5 @@
-import { SQSEvent, SQSRecord } from "aws-lambda";
-import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
+import { SQSEvent, SQSRecord } from 'aws-lambda';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 
 export const handler = async (event: SQSEvent) => {
   const records: SQSRecord[] = event.Records;

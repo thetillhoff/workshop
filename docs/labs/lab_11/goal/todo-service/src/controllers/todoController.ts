@@ -25,6 +25,7 @@ export const createTodo = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to create todo", details: error });
   }
+
   try {
     const queueUrl = process.env.QUEUE_URL;
     if (!queueUrl) {
@@ -33,10 +34,15 @@ export const createTodo = async (req: Request, res: Response) => {
     const sqs = new SQSClient();
     const command = new SendMessageCommand({
       QueueUrl: queueUrl,
-      MessageBody: JSON.stringify({ title, description, dueDate, status, userEmail }),
+      MessageBody: JSON.stringify({
+        title,
+        description,
+        dueDate,
+        status,
+        userEmail,
+      }),
     });
     await sqs.send(command);
-    
   } catch (error) {
     console.error("Failed to send message to queue", error);
   }

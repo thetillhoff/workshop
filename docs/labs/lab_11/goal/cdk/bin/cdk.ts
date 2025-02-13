@@ -3,13 +3,12 @@ import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { DatabaseStack } from '../lib/database-stack';
 import { EcsStack } from '../lib/ecs-stack';
-import { ElasticacheStack } from '../lib/elasticache';
+import { ElasticacheStack } from '../lib/elasticache-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { SqsStack } from '../lib/sqs-stack';
 import { SnsStack } from '../lib/sns-stack';
-
 const app = new cdk.App();
-const vpcStack = new VpcStack(app, 'VpcStack',{
+const vpcStack = new VpcStack(app, 'VpcStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'eu-central-1' },
 });
 
@@ -37,7 +36,7 @@ const ecsStack = new EcsStack(app, 'EcsStack', {
   databaseConnections: databaseStack.databaseConnections,
   databaseCredentialsSecret: databaseStack.dbCredentialsSecret,
   elasticacheConnections: elasticacheStack.connections,
-  elasticacheEndpointAddress: elasticacheStack.endpointAddress,
+  elasticacheEndpoint: elasticacheStack.endpointAddress,
   queue: sqsStack.queue,
 });
 
