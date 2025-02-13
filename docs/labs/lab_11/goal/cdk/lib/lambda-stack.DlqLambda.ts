@@ -13,7 +13,7 @@ export const handler = async (event: SQSEvent) => {
     const response = await snsClient.send(
       new PublishCommand({
         Message: body,
-        TopicArn: process.env.SNS_TOPIC_ARN,
+        TopicArn: process.env.TOPIC_ARN, // make sure this matches the environment variable you set in the LambdaStack
       })
     );
     console.log(response);

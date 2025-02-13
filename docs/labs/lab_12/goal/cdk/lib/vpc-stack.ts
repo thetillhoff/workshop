@@ -2,6 +2,8 @@ import * as cdk from 'aws-cdk-lib';
 import { IpAddresses, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 
+
+
 export class VpcStack extends cdk.Stack {
   public vpc: Vpc;
 
@@ -20,9 +22,9 @@ export class VpcStack extends cdk.Stack {
           cidrMask: 24,
           name: 'private',
           subnetType: SubnetType.PRIVATE_WITH_EGRESS,
-        }
+        },
       ],
       natGateways: 1,
-    })
+    });
   }
 }

@@ -153,6 +153,8 @@ For reference: The ID in `const snsStack = new SnsStack(app, 'SnsStack', {...});
 
 In the LambdaStack, you need to pass the SNS topic ARN as environment variable (hint: they work similar to environment variables in ECS, and the value could look like `props!.topic.topicArn`).
 
+ARN stands for Amazon Resource Name and is a unique identifier for a resource in the AWS cloud.
+
 And you need to grant the lambda permissions to publish to the topic.
 This is new, and can be done with `props!.topic.grantPublish(dlqLambda);`.
 
@@ -170,7 +172,7 @@ const snsClient = new SNSClient();
 const response = await snsClient.send(
   new PublishCommand({
     Message: body,
-    TopicArn: process.env.SNS_TOPIC_ARN,
+    TopicArn: process.env.TOPIC_ARN, // make sure this matches the environment variable you set in the LambdaStack
   })
 );
 console.log(response);
