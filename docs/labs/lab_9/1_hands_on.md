@@ -228,7 +228,7 @@ And add the `REDIS_ENDPOINT` to the `.env` file:
 
 ```sh
 # ...
-REDIS_ENDPOINT=redis:6379
+REDIS_ENDPOINT=redis
 ```
 
 Verify that the application is working locally with our new changes.
